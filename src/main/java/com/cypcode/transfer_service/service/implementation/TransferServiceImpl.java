@@ -74,7 +74,7 @@ public class TransferServiceImpl implements TransferService {
     @Override
     public IdempotencyDTO createTransferWithIndempotency(TransferDTO transferDTO, String id) {
         Idempotency idempotency = idempotencyRepository.findIdempotencyById(id);
-        if (idempotency != null && idempotency.getExpiryDate().isBefore(LocalDateTime.now())) {
+        if (idempotency != null && idempotency.getExpiryDate().isAfter(LocalDateTime.now())) {
             return mapToIdempotencyDTO(idempotency);
         }else{
             long transferId = atomicTransferId.incrementAndGet();
