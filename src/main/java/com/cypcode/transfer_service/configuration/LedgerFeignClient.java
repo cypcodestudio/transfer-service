@@ -2,9 +2,7 @@ package com.cypcode.transfer_service.configuration;
 
 import com.cypcode.transfer_service.entity.dto.TransferDTO;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 public interface LedgerFeignClient {
     @PostMapping(path = "${cypcode.service.ledger.transfer}")
     @CircuitBreaker(name = "ledger-cb-transfer", fallbackMethod = "createTransferFallback")
-    String createTransfer(@RequestBody TransferDTO payload);
+    ResponseEntity<String> createTransfer(@RequestBody TransferDTO payload);
 
     default String createTransferFallback(@RequestBody TransferDTO payload, Throwable throwable) {
         System.out.println("Create Transfer Fallback");

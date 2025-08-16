@@ -1,5 +1,7 @@
 package com.cypcode.transfer_service.controller;
 
+import com.cypcode.transfer_service.common.exception.AccountNotFoundException;
+import com.cypcode.transfer_service.common.exception.InsufficienetFundsException;
 import com.cypcode.transfer_service.entity.dto.IdempotencyDTO;
 import com.cypcode.transfer_service.entity.dto.TransferDTO;
 import com.cypcode.transfer_service.service.TransferService;
@@ -16,11 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Slf4j
+@CrossOrigin("*")
+@Validated
 @RestController
 @RequestMapping("transfers")
 @Tag(name = "Transfers", description = "APIs for managing transfers")
@@ -35,15 +40,24 @@ public class TransferController {
                     content = @Content(schema = @Schema(implementation = IdempotencyDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request data",
                     content = @Content(schema = @Schema())),
+            @ApiResponse(responseCode = "428", description = "Insufficient funds in account",
+                    content = @Content(schema = @Schema())),
             @ApiResponse(responseCode = "500", description = "internal server error",
                     content = @Content(schema = @Schema()))
     })
     @PostMapping()
-    public ResponseEntity<?> createTransfer(@RequestHeader(name = "Idempotency-Key") String idempotencyKey,@RequestBody TransferDTO payload) {
+    public ResponseEntity<?> createTransfer(@RequestHeader(name = "Idempotency-Key") @NotEmpty String idempotencyKey,@RequestBody @Valid TransferDTO payload) {
         try {
             IdempotencyDTO response = transferService.createTransferWithIndempotency(payload, idempotencyKey);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        }catch (Exception e){
+        }
+        catch (AccountNotFoundException e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+        catch (InsufficienetFundsException e){
+            return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).body(e.getMessage());
+        }
+        catch (Exception e){
             log.error("Transfer request failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }

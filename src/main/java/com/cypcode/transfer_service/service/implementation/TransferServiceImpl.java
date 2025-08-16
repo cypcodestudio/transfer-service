@@ -1,5 +1,7 @@
 package com.cypcode.transfer_service.service.implementation;
 
+import com.cypcode.transfer_service.common.exception.AccountNotFoundException;
+import com.cypcode.transfer_service.common.exception.InsufficienetFundsException;
 import com.cypcode.transfer_service.configuration.LedgerFeignClient;
 import com.cypcode.transfer_service.entity.Idempotency;
 import com.cypcode.transfer_service.entity.dto.IdempotencyDTO;
@@ -8,9 +10,15 @@ import com.cypcode.transfer_service.repository.IIdempotencyRepository;
 import com.cypcode.transfer_service.service.TransferService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -18,13 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Slf4j
+@EnableAsync
 @Service
 public class TransferServiceImpl implements TransferService {
 
     public static final int IDEMPOTENCY_KEY_EXPIRATION_HOURS = 2;
 
     @Autowired
-    private static LedgerFeignClient ledgerFeignClient;
+    private LedgerFeignClient ledgerFeignClient;
 
     @Autowired
     private IIdempotencyRepository idempotencyRepository;
@@ -47,7 +56,16 @@ public class TransferServiceImpl implements TransferService {
     @Override
     public String createTransfer(TransferDTO transferDTO) {
         try {
-            return ledgerFeignClient.createTransfer(transferDTO);
+            ResponseEntity<String> response = ledgerFeignClient.createTransfer(transferDTO);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return response.getBody();
+            }else if(response.getStatusCode().value() == HttpStatus.PRECONDITION_FAILED.value()){
+                throw new InsufficienetFundsException(response.getBody());
+            }else if(response.getStatusCode().value() == HttpStatus.NOT_FOUND.value()){
+                throw new AccountNotFoundException(response.getBody());
+            }else{
+              throw new ResponseStatusException(response.getStatusCode(), response.getBody());
+            }
         }catch (Exception e){
             throw e;
         }
@@ -70,9 +88,11 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     public void batchTransfer(List<TransferDTO> transferDTOList) throws ExecutionException, InterruptedException {
-        List<CompletableFuture<String>> futures = transferDTOList.stream()
-                .map(TransferServiceImpl::processItem)
-                .collect(Collectors.toList());
+        List<CompletableFuture<String>> futures = new ArrayList<>();
+        for (TransferDTO transferDTO : transferDTOList) {
+            CompletableFuture<String> result = processItem(transferDTO);
+            futures.add(result);
+        }
 
         CompletableFuture<Void> allOfFutures = CompletableFuture.allOf(
                 futures.toArray(new CompletableFuture[0]));
@@ -86,11 +106,20 @@ public class TransferServiceImpl implements TransferService {
         log.info("Batch transfer results: {}", results);
     }
 
-    public static CompletableFuture<String> processItem(TransferDTO item) {
-        return CompletableFuture.supplyAsync(() -> {
-            ledgerFeignClient.createTransfer(item);
-            return "Processed: " + item;
-        });
+    @Async
+    public CompletableFuture<String> processItem(TransferDTO item) {
+        Idempotency idempotency = idempotencyRepository.findIdempotencyByTransferId(item.getTransferId());
+        if (idempotency != null && idempotency.getExpiryDate().isBefore(LocalDateTime.now())) {
+            log.info("Idempotency: {}, status: {}", idempotency.getTransferId(), idempotency.getResponse());
+            return CompletableFuture.completedFuture(String.format("Processed: %s, %s", item.getTransferId(), idempotency.getResponse()));
+        }else{
+            ResponseEntity<String> result = ledgerFeignClient.createTransfer(item);
+            if(result.getStatusCode().is2xxSuccessful()){
+                addIdempotencyEntry(String.valueOf(item.getTransferId()), result.getBody(), item.getTransferId());
+            }
+            log.info("Transfer: {}, status: {}", item.getTransferId(), result.getBody());
+            return CompletableFuture.completedFuture(String.format("Processed: %s, %s", item.getTransferId(), result.getBody()));
+        }
     }
 
     private Idempotency addIdempotencyEntry(String id, String response, long transferId) {

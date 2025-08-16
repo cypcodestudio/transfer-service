@@ -65,7 +65,7 @@ public class TransferControllerTest {
                 .response("SUCCESS")
                 .expiryDate(LocalDateTime.now().plusHours(2))
                 .build();
-        lenient().when(ledgerFeignClient.createTransfer(payload)).thenReturn("SUCCESS");
+        lenient().when(ledgerFeignClient.createTransfer(payload)).thenReturn(ResponseEntity.ok("SUCCESS"));
         lenient().when(transferService.createTransferWithIndempotency(payload, idempotencyKey)).thenReturn(response);
         mockMvc.perform(post(url)
                         .header("Idempotency-Key", idempotencyKey)
@@ -101,7 +101,7 @@ public class TransferControllerTest {
                 .amount(BigDecimal.valueOf(200))
                 .build();
         List<TransferDTO> payloads = List.of(payload);
-        lenient().when(ledgerFeignClient.createTransfer(payload)).thenReturn("SUCCESS");
+        lenient().when(ledgerFeignClient.createTransfer(payload)).thenReturn(ResponseEntity.ok("SUCCESS"));
         mockMvc.perform(post(url + "/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payloads)))

@@ -1,9 +1,0 @@
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/Application.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/configuration/LedgerFeignClient.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/controller/TransferController.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/entity/Idempotency.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/entity/dto/IdempotencyDTO.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/entity/dto/TransferDTO.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/repository/IIdempotencyRepository.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/service/TransferService.java
-/Users/nkululekog/Documents/Projects/Cypcode/Cypcode Studios/transfer-service/src/main/java/com/cypcode/transfer_service/service/implementation/TransferServiceImpl.java
