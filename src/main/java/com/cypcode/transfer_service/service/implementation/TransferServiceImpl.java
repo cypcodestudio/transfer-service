@@ -76,13 +76,13 @@ public class TransferServiceImpl implements TransferService {
         Idempotency idempotency = idempotencyRepository.findIdempotencyById(id);
         if (idempotency != null && idempotency.getExpiryDate().isBefore(LocalDateTime.now())) {
             return mapToIdempotencyDTO(idempotency);
+        }else{
+            long transferId = atomicTransferId.incrementAndGet();
+            transferDTO.setTransferId(transferId);
+            String response = createTransfer(transferDTO);
+            Idempotency idempotencyEntry = addIdempotencyEntry(id, response, transferId);
+            return mapToIdempotencyDTO(idempotencyEntry);
         }
-
-        long transferId = atomicTransferId.incrementAndGet();
-        transferDTO.setTransferId(transferId);
-        String response = createTransfer(transferDTO);
-        Idempotency idempotencyEntry = addIdempotencyEntry(id, response, transferId);
-        return mapToIdempotencyDTO(idempotencyEntry);
 
     }
 
