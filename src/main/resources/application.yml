@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: transfer-service
+  datasource:
+    url: jdbc:h2:mem:ledgerdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE;MODE=PostgreSQL;
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+    jpa:
+      database-platform: org.hibernate.dialect.H2Dialect
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog-master.xml
+  cloud:
+    circuitbreaker:
+      resilience4j:
+        circuitbreaker:
+          configs:
+            default:
+              failureRateThreshold: 50
+              slidingWindowSize: 100
+              minimumNumberOfCalls: 10
+              waitDurationInOpenState: 60s
+              permittedNumberOfCallsInHalfOpenState: 10
+          instances:
+            ledger-cb-transfer:
+              baseConfig: default
+              failureRateThreshold: 70
+
+
+    compatibility-verifier:
+      enabled: false
+
+cypcode:
+  service:
+    ledger:
+      base-url: http://localhost:8081
+      transfer: 'ledger/transfer'
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true

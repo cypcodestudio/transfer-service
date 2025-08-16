@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  transfer-service:
+    image: 'cycpode/transfer-service:latest'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ctransferservice
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:mem:ledgerdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE;MODE=PostgreSQL;
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    ports:
+      - "8080:8080"
