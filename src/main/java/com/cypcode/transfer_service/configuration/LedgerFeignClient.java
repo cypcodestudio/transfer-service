@@ -12,10 +12,10 @@ public interface LedgerFeignClient {
     @CircuitBreaker(name = "ledger-cb-transfer", fallbackMethod = "createTransferFallback")
     ResponseEntity<String> createTransfer(@RequestBody TransferDTO payload);
 
-    default String createTransferFallback(@RequestBody TransferDTO payload, Throwable throwable) {
+    default ResponseEntity<String> createTransferFallback(@RequestBody TransferDTO payload, Throwable throwable) {
         System.out.println("Create Transfer Fallback");
         System.out.println(String.format("Create Transfer Exception: %s", throwable.getMessage()));
-        return "FAILURE";
+        return ResponseEntity.ok("FAILURE");
     }
 
 

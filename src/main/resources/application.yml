@@ -21,14 +21,15 @@ spring:
           configs:
             default:
               failureRateThreshold: 50
-              slidingWindowSize: 100
-              minimumNumberOfCalls: 10
-              waitDurationInOpenState: 60s
-              permittedNumberOfCallsInHalfOpenState: 10
+              slidingWindowSize: 1
+              minimumNumberOfCalls: 2
+              waitDurationInOpenState: 1s
+              permittedNumberOfCallsInHalfOpenState: 2
+              automaticTransitionFromOpenToHalfOpenEnabled: true
           instances:
             ledger-cb-transfer:
               baseConfig: default
-              failureRateThreshold: 70
+              failureRateThreshold: 50
 
 
     compatibility-verifier:
