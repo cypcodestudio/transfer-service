@@ -1,6 +1,7 @@
 package com.cypcode.transfer_service.controller;
 
 import com.cypcode.transfer_service.common.exception.AccountNotFoundException;
+import com.cypcode.transfer_service.common.exception.IdempotencyException;
 import com.cypcode.transfer_service.common.exception.InsufficienetFundsException;
 import com.cypcode.transfer_service.entity.dto.IdempotencyDTO;
 import com.cypcode.transfer_service.entity.dto.TransferDTO;
@@ -56,6 +57,9 @@ public class TransferController {
         }
         catch (InsufficienetFundsException e){
             return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED).body(e.getMessage());
+        }
+        catch (IdempotencyException e){
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(e.getMessage());
         }
         catch (Exception e){
             log.error("Transfer request failed: {}", e.getMessage());

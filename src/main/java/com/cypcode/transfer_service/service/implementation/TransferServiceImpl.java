@@ -1,6 +1,7 @@
 package com.cypcode.transfer_service.service.implementation;
 
 import com.cypcode.transfer_service.common.exception.AccountNotFoundException;
+import com.cypcode.transfer_service.common.exception.IdempotencyException;
 import com.cypcode.transfer_service.common.exception.InsufficienetFundsException;
 import com.cypcode.transfer_service.configuration.LedgerFeignClient;
 import com.cypcode.transfer_service.entity.Idempotency;
@@ -63,6 +64,8 @@ public class TransferServiceImpl implements TransferService {
                 throw new InsufficienetFundsException(response.getBody());
             }else if(response.getStatusCode().value() == HttpStatus.NOT_FOUND.value()){
                 throw new AccountNotFoundException(response.getBody());
+            }else if(response.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()){
+                throw new IdempotencyException(response.getBody());
             }else{
               throw new ResponseStatusException(response.getStatusCode(), response.getBody());
             }
